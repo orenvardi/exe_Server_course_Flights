@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <title>DataTable Favorite</title>
+
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+   <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>-->
+
+    <link href="../Content/FlightStyle.css" rel="stylesheet" />
+
+
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row" dir="rtl">
+                <nav class="navbar navbar-expand-lg navbar-light navBar-my navbarTable" style="background-color: #e2e3dc;">
+                    <a class="navbar-brand" href="HomeManager.html">מנהל  &nbsp;</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                        <div class="navbar-nav">
+                            <a class="nav-item nav-link" href="ManagerSales.html">ממשק מבצעים<span class="sr-only">(current)</span></a>
+                            <a class="nav-item nav-link" href="ManagerFaforite.html" style="font-weight: bold">טיסות מועדפות</a>
+                            <a class="nav-item nav-link" href="ManagerOrders.html">תצוגת הזמנות</a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        <div>
+            <table id="example" class="display" style="width:90%"></table>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            if (document.cookie == "")
+                location.href = "Log-In Page.html";
+            ajaxCall("GET", "../api/Favorite", "", getFavoriteSuccess, getFavoriteError)
+                });
+                function getFavoriteSuccess(data) {
+                    var allData = [];
+                    var dataFav = data;
+                    console.log(dataFav);
+                    for (var i = 0; i < dataFav.length; i++) {
+                        var x = [dataFav[i].Airline, dataFav[i].DepartureCity, dataFav[i].ArrivalCity, dataFav[i].DepartureTime, dataFav[i].ArrivalTime, dataFav[i].ArrivalHour, dataFav[i].CountFav];
+                        allData.push(x);
+                    }
+                    console.log(dataFav);
+                    console.log(allData);
+                    
+                    $('#example').DataTable({
+                        data: allData,
+                        columns: [
+                            { title: "חברת תעופה" },
+                            { title: "מ" },
+                            { title: "אל" },
+                            { title: "תאריך טיסה" },
+                            { title: "תאריך נחיתה" },
+                            { title: "שעת טיסה" },
+                            { title: "כמות" }
+                        ]
+                    });
+                }
+                function getFavoriteError(err) {
+                    console.log(err)
+                }
+    </script>
+</body>
+</html>

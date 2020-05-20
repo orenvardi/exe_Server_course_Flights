@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link href="../Content/FlightStyle.css" rel="stylesheet" />
+    <script src="../Scripts/autocomplete.js"></script>
+    <script src="../Scripts/validations.js"></script>
+    <title></title>
+</head>
+<body>
+    <div class="container-fluid HomeContainer">
+        <!-- תפריט -->
+        <nav class="navbar navbar-expand-lg navbar-light navBar-my" dir="rtl" style="background-color: #e2e3dc;">
+            <a class="navbar-brand" href="Home.html">לקוחות</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav">
+                    <a class="nav-item nav-link" href="searchFlights.html" style="font-weight: bold">חיפוש טיסות</a>
+                    <a class="nav-item nav-link" href="UsersFavorites.html">טיסות מועדפות שלי</a>
+                    <a class="nav-item nav-link" href="Log-In Page.html">כניסת מנהלים <span class="sr-only">(current)</span></a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- טופס -->
+        <div>
+            <div class="container-fluid divLeft">
+                <!-- <img class="img-responsive imgFlight" src="../img/flightIMG.jpeg">-->
+
+                <form autocomplete="off" id="pForm">
+                    <label for="from">From: </label>
+                    <div class="autocomplete col-md-12">
+                        <input type="text" id="from" class="inputStyle form-control" name="from" placeholder="Enter Origine" required>
+                    </div>
+                    <label for="to">To: </label>
+                    <div class="autocomplete col-md-12">
+                        <input type="text" id="to" name="to" class="inputStyle form-control" placeholder="Enter Destination" required>
+                    </div>
+                    <div>
+                        <label for="start">From Date:</label>
+                        <input type="date" id="start" class="inputStyle form-control" name="trip-start" required />
+                    </div>
+                    <div>
+                        <label for="end">To Date:</label>
+                        <input type="date" id="end" class="inputStyle form-control" name="trip-end" required />
+                    </div>
+                    <div class="row buttonsDiv">
+                        <button type="submit" id="getFlights" class="btn btn-secondary btn1">Search!</button>
+                    </div>
+                </form>
+            </div>
+            <!-- תצוגת הטיסות -->
+            <div class="container-fluid divRight">
+                <p id="result"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        arr_Airports = [];
+        arr_Sales = [];
+        Flights = [];
+
+        $(document).ready(function () {
+            ajaxCall("GET", "../api/Airport", "", getAirportSuccess, geAirportError);//get airports from the DB
+            ajaxCall("GET", "../api/Sales/Discount", "", getSalesSuccess, getSalesError);
+            // activate a custom validation function when the element looses focus.
+            //$("#start").on("blur", checkCodeStart);
+            //$('#end').on("blur", checkCodeEnd);
+            var now = new Date(),
+                minDate = now.toISOString().substring(0, 10);
+            $('#start, #end').prop('min', minDate);
+            $('#start, #end').change(function () {
+                $('#end').attr('min', $('#start').val());
+                $('#start').attr('max', $('#end').val());
+
+            });
+            $("#pForm").on('submit', checkCode);
+        });
+
+        function checkCode() {
+            getFlights();
+            return false;
+        }
+
+        function getSalesSuccess(data) {
+            console.log(data);
+            arr_Sales = data;
+        }
+
+        function getSalesError(err) {
+            console.log(err);
+        }
+
+        // פונקציות הצלחה ושגיאה של שדות התעופה
+        function getAirportSuccess(data) {
+            console.log(data);
+            arr_Airports = data;
+            autocomplete(document.getElementById("from"), data);
+            autocomplete(document.getElementById("to"), data);
+        }
+        function geAirportError(err) {
+            console.log("error getting the airports data");
+            console.log(err);
+        }
+
+        // חיפוש טיסות
+        function getFlights() {
+            // מציאת קוד שדה התעופה לפי השם שנרשם בחיפוש
+            from_Chosen = to_Chosen = "";
+            for (var i = 0; i < arr_Airports.length; i++) {
+                if (arr_Airports[i].Name == $("#from").val())
+                    from_Chosen = arr_Airports[i].NameID;
+                else if (arr_Airports[i].Name == $("#to").val())
+                    to_Chosen = arr_Airports[i].NameID;
+            }
+            // סידור התאריכים שהמשתמש בחר
+            var start = $("#start").val();
+            var end = $("#end").val();
+            var start_year = start.substring(0, 4); //שנת התחלה
+            var start_month = start.substring(5, 7); //חודש התחלה
+            var start_day = start.substring(8, 10); //יום התחלה
+            var start2 = start_day + '/' + start_month + '/' + start_year; //סידור תאריך התחלה לפורמט תאריך מתאים
+            var end_year = end.substring(0, 4); //שנת סיום
+            var end_month = end.substring(5, 7); //חודש סיום
+            var end_day = end.substring(8, 10); //יום סיום
+            var end2 = end_day + '/' + end_month + '/' + end_year; //סידור תאריך סיום לפורמט תאריך מתאים
+            document.getElementById('result').innerHTML = "<div class='waitDiv'>Wait a few seconds and we will bring all the information you need..(:</div>";
+
+            /* executing the api */ //פעולת גט מהשרת החיצוני של הטיסות
+            ajaxCall("GET", "https://api.skypicker.com/flights?flyFrom=" + from_Chosen + "&to=" + to_Chosen + "&dateFrom=" + start2 + "&dateTo=" + end2 + "&partner=orenn", "", getFlightSuccess, getFlightError);
+        }
+
+        function getFlightSuccess(data) {
+            // הדאטה שקיבלנו זה אובייקט ג'ייסון שיש לו 2 תכונות ואנחנו צריכים את התכונה השניה שקוראים לה דאטה שהיא מכילה מערך ג'ייסוני עם נתוני הטיסות
+            data = data.data;
+            console.log(data);
+            ShowData(data);
+        }
+        function ShowData(data) {
+            document.getElementById('result').innerHTML = "";
+            var Route = [];
+            // הכנסת הפרטים הרלוונטיים של הטיסות לתוך מערך
+            for (var i = 0; i < data.length; i++) {
+
+                var priceDiscount = data[i].conversion.EUR;
+                var DepartureTimeAndDate = new Date(data[i].dTimeUTC * 1000).toISOString().split('T');
+                var ArrivalTimeAndDate = new Date(data[i].aTimeUTC * 1000).toISOString().split('T');
+                for (var j = 0; j < arr_Sales.length; j++) {
+
+                    for (var a = 0; a < arr_Airports.length; a++) {
+                        if (arr_Airports[a].Name == $("#from").val())
+                            from_Chosen = arr_Airports[a].NameID;
+                        else if (arr_Airports[a].Name == $("#to").val())
+                            to_Chosen = arr_Airports[a].NameID;
+                    }
+
+                    for (var b = 0; b < arr_Airports.length; b++) {
+                        if (arr_Airports[b].Name == arr_Sales[j].Origin)
+                            from_Chosen2 = arr_Airports[b].NameID;
+                        else if (arr_Airports[b].Name == arr_Sales[j].Destination)
+                            to_Chosen2 = arr_Airports[b].NameID;
+                    }
+
+                    if (arr_Sales[j].Airline == data[i].airlines[0] && from_Chosen2 == from_Chosen && to_Chosen2 == to_Chosen 
+                        && arr_Sales[j].StartDate <= DepartureTimeAndDate[0] && arr_Sales[j].EndDate >= DepartureTimeAndDate[0]) {
+                        priceDiscount = data[i].conversion.EUR * (100-arr_Sales[j].DiscountOfCustomer)/100;
+                    }
+
+                }
+                Flight = {
+                    id: data[i].id,
+                    DepartureTime: DepartureTimeAndDate[0],
+                    DepartureHour: DepartureTimeAndDate[1].slice(0, 5),
+                    ArrivalTime: ArrivalTimeAndDate[0],
+                    ArrivalHour: ArrivalTimeAndDate[1].slice(0, 5),
+                    DepartureCity: data[i].cityFrom,
+                    ArrivalCity: data[i].cityTo,
+                    Airline: data[i].airlines[0],
+                    Price: data[i].conversion.EUR,
+                    PriceDiscount: priceDiscount
+                };
+                Flights.push(Flight);
+            }
+            
+
+            //הדפסת טיסות
+            for (var i = 0; i < Flights.length; i++) {
+                str = '';
+                str = `
+                    <div style="margin: 1% 0% 25% 0" class="detailsDiv">
+                    <div class ="col-md-12 headline"><h1>Flight Details: </h1></div>
+                    <div class ="col-md-4 searchResult" ><p class ="titleP"> Departure Time: </p> <p id="dip_date${i}">${Flights[i].DepartureTime}</p></div>
+                    <div class ="col-md-4 searchResult" ><p class ="titleP"> Arrival Time: </p> <p id="arr_date${i}">${Flights[i].ArrivalTime}</p></div>
+                   <div class ="col-md-4 searchResult" ><p class ="titleP"> Airline: </p> <p id="airline${i}">${Flights[i].Airline}</p></div>
+                   <div class ="col-md-4 searchResult" ><p class ="titleP"> Departure City: </p> <p id="cityFrom${i}">${Flights[i].DepartureCity}</p></div>
+                    <div class ="col-md-4 searchResult" ><p class ="titleP"> Arrival City: </p> <p id="cityTo${i}">${Flights[i].ArrivalCity}</p></div>`;
+                    
+                if(Flights[i].Price==Flights[i].PriceDiscount)
+                {str+=`<div class ="col-md-4 searchResult" ><p class ="titleP"> Price: </p> <p class="priceTxt" id="price${i}">${Flights[i].Price}</p><p> €</p></div>`}
+                else{
+                    str+=`<div class ="col-md-4 searchResult" ><p class ="titleP">Old price: </p> <p class="priceTxt"  style="text-decoration: line-through" id="price${i}">${Flights[i].Price}</p><p> €</p></div>
+                     <div class ="col-md-4 searchResult" style="font-weight: bold ;color:#ba2754;"><p class ="titleP"> Price after discount: </p> <p class="priceTxt"   id="price${i}">${Flights[i].PriceDiscount}</p><p > €</p></div>`;
+                }
+                  str+=`<div class ="col-md-4 searchResult" style="margin-top:2%" > <button type="button" class ="btn btn-secondary btn1" id="${i}" onclick="AddFaviritsFlights(${i})">Save</button> </div>
+                    <div class ="col-md-4 searchResult" style="margin-top:2%"> <button type="button" class ="btn btn-secondary btn1"  id="${i}" onclick="btnOrder(${i}) ">Order</button> </div>
+                    </div>`;
+                document.getElementById('result').innerHTML += str;
+            }
+        }
+        function getFlightError(err) {
+            alert("not all fields are good");
+        }
+        function AddFaviritsFlights(index) {
+            //save in local storage
+            !$(event.target).text('Saved');
+            !$(event.target).prop('disabled', true);
+            console.log(Flights[index]);
+            var existingFaforites = JSON.parse(window.localStorage.getItem('AllFavirites'));
+            if (existingFaforites == null)
+                existingFaforites = [];
+            //var OneFavorite=window.localStorage.setItem('onefavorite', JSON.stringify(Flights[index]));
+            existingFaforites.push(Flights[index]);
+            window.localStorage.clear();
+            window.localStorage.setItem("AllFavirites", JSON.stringify(existingFaforites));
+            //****end save in local storage
+            ajaxCall("POST", "../api/Favorite",JSON.stringify(Flights[index]), postFavoriteSuccess, postFavoriteError)
+        }
+
+        function postFavoriteSuccess(data) {
+            console.log(data);
+        }
+        function postFavoriteError(err) {
+            console.log(err)
+        }
+
+        function btnOrder(index) {
+            //save in local storage
+            console.log(Flights[index]);
+            window.localStorage.setItem("FlightToOrder", JSON.stringify(Flights[index]));
+            //window.open('OrderFlight.html', '_blank'); //open OrderFlight page in new tab
+            $(location).attr('href', 'OrderFlight.html'); //redirect to OrderFlight page
+        }
+        
+    </script>
+</body>
+</html>

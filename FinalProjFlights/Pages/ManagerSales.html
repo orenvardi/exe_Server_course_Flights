@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <title>DataTable Favorite</title>
+
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCalls.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/autocomplete.js"></script>
+    <script src="../Scripts/validations.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="../Content/FlightStyle.css" rel="stylesheet" />
+
+
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="navbar navbar-expand-lg navbar-light navBar-my navbarTable" dir="rtl" style="background-color: #e2e3dc;">
+                <a class="navbar-brand" href="HomeManager.html">מנהל  &nbsp;</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                    <div class="navbar-nav">
+                        <a class="nav-item nav-link" href="ManagerSales.html" style="font-weight: bold">ממשק מבצעים<span class="sr-only">(current)</span></a>
+                        <a class="nav-item nav-link" href="ManagerFaforite.html">טיסות מועדפות</a>
+                        <a class="nav-item nav-link" href="ManagerOrders.html">תצוגת הזמנות</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div>
+            <button id="addRow">addRow</button>
+            <table id="example" class="display" style="width:90%"></table>
+        </div>
+        <div class="hideORnot">
+            <form id="pForm" onsubmit="return false">
+                <div class="col-md-12">
+                    <label for="from">Airline: </label>
+                    <input type="text" id="Airline" class="inputStyle form-control" name="Airline" placeholder="Enter Airline" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="from">From: </label>
+                    <input type="text" id="from" class="inputStyle form-control" name="from" placeholder="Enter Origine" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="to">To: </label>
+                    <input type="text" id="to" name="to" class="inputStyle form-control" placeholder="Enter Destination" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="start">From Date:</label>
+                    <input type="date" id="start" class="inputStyle form-control" name="trip-start" required />
+                </div>
+                <div class="col-md-12">
+                    <label for="end">To Date:</label>
+                    <input type="date" id="end" class="inputStyle form-control" name="trip-end" required />
+                </div>
+                <div class="col-md-12">
+                    <label for="from">Discount: </label>
+                    <input type="text" id="Discount" class="inputStyle form-control" name="Discount" placeholder="Enter Discount" required>
+                </div>
+                <div class="row col-md-12" id="buttonsDiv">
+                 
+                </div>
+            </form>
+
+        </div>
+    </div>
+    <script>
+        dataSale = [];
+        ChangedID = 0;
+        whereAmI=0;
+        $(document).ready(function () {
+            if (document.cookie =="")
+                location.href = "Log-In Page.html";
+            $("#start").on("blur", checkCodeStart);
+            $('#end').on("blur", checkCodeEnd);
+            $("#pForm").on('submit', checkCode);
+            $(".hideORnot").hide();
+            //if(whereAmI=1){
+            //    $("#pForm").submit(AddSaleSubmit)
+            //}
+            //else if(whereAmI=2){
+            //    $("#pForm").submit(EditSaleSubmit)
+            //}
+            
+            ajaxCall("GET", "../api/Sales", "", getSalesSuccess, getSalesError);
+        });
+ 
+                function getAirportSuccess(data) {
+                    autocomplete(document.getElementById("from"), data);
+                    autocomplete(document.getElementById("to"), data);
+                    console.log(data);
+                }
+                function geAirportError(err) {
+                    console.log(err);
+                }
+                function getSalesSuccess(data) {
+                    var allData = [];
+                    dataSale = data;
+                    console.log(dataSale);
+                    for (var i = 0; i < dataSale.length; i++) {
+                        var x = [dataSale[i].SaleID,dataSale[i].Airline, dataSale[i].Origin, dataSale[i].Destination, dataSale[i].StartDate, dataSale[i].EndDate, dataSale[i].Discount+"%"];
+                        allData.push(x);
+                    }
+                    console.log(dataSale);
+                    console.log(allData);
+
+                    t=$('#example').DataTable({
+                        data: allData,
+                        select: true,
+                        columns: [
+                            { title: "מספר",visible:false },
+                            { title: "חברת תעופה" },
+                            { title: "מ" },
+                            { title: "אל" },
+                            { title: "תאריך טיסה" },
+                            { title: "תאריך נחיתה" },
+                            { title: "הנחה" },
+                               {
+                                   render: function (title, type, row, meta) {
+                                let dataCar = "data-SaleId='" + row[0]+ "'";
+
+                                editBtn = "<button type='button' class = 'editBtn btn btn-success' " + dataCar + "> Edit </button>";
+                                deleteBtn = "<button type='button' class = 'deleteBtn btn btn-danger' " + dataCar + "> Delete </button>";
+                                return editBtn + deleteBtn;
+                            }
+                        },
+
+                        ]
+                    });
+                }
+
+                function getSalesError(err) {
+                    console.log(err)
+                }
+        //////////////////Edit the data///////////////
+                
+                
+                $(document).on("click", ".editBtn", function () {
+
+                    whereAmI = 2;
+                    $("#pForm").submit(EditSaleSubmit);
+                    $(".hideORnot").show();
+                    document.getElementById("buttonsDiv").innerHTML = '<button type="submit" id="SaveSale" name="SaveSale" class="btn btn-secondary btn1">Save</button>';
+                   
+
+                    var SaleId = this.getAttribute('data-SaleId');
+                    ChangedID = SaleId;
+                    //markSelected(this);
+                    //$("#editDiv").show();
+                    $(".hideORnot :input").prop("disabled", false); // edit mode: enable all controls in the form
+                    populateFields(this.getAttribute('data-SaleId')); // fill the form fields according to the selected row
+                });
+
+                function populateFields(saleId) {
+                    sale = getSALE(saleId);
+                    $("#Airline").val(sale.Airline);
+                    $("#from").val(sale.Origin);
+                    $("#to").val(sale.Destination);
+                    $("#start").val(sale.StartDate);
+                    $("#end").val(sale.EndDate);
+                    $("#Discount").val(sale.Discount);
+
+                }
+
+                function getSALE(id) {
+                    for (i in dataSale) {
+                        if (dataSale[i].SaleID == id)
+                            return dataSale[i];
+                    }
+                    return null;
+                }
+                function EditSaleSubmit() {
+                    
+                    EditSALE = {
+                        SaleID: ChangedID,
+                        Airline: $("#Airline").val(),
+                        Origin:$("#from").val(),
+                        Destination:$("#to").val(),
+                        StartDate:$("#start").val(),
+                        EndDate:$("#end").val(),
+                        Discount:$("#Discount").val(),
+                    }
+
+
+                    swal("Good job!", "You edit the sale!", "success")
+                    $(".hideORnot").hide();
+                    console.log(EditSALE);
+                    ajaxCall("PUT", "../api/Sales", JSON.stringify(EditSALE), putSaleSeccess, putSaleError);
+                    whereAmI = 0;
+                    location.reload();
+
+                }
+                function putSaleSeccess(data) {
+                    console.log(data);
+                }
+                function putSaleError(err) {
+                    console.log(err);
+                }
+
+        
+        //////////////////Add the data new row///////////////
+
+                $(document).on("click", "#addRow", function () {
+                    whereAmI = 1;
+                    $("#pForm").submit(AddSaleSubmit);
+
+                    document.getElementById("buttonsDiv").innerHTML = '<button type="submit" id="AddSale" name="AddSale" class="btn btn-secondary btn1">add</button>';
+                    $(".hideORnot").show();
+
+                });
+                function AddSaleSubmit() {
+                    whereAmI = 0;
+                    AddSALE = {
+                        SaleID:0,
+                        Airline: $("#Airline").val(),
+                        Origin: $("#from").val(),
+                        Destination: $("#to").val(),
+                        StartDate: $("#start").val(),
+                        EndDate: $("#end").val(),
+                        Discount: parseInt($("#Discount").val()),
+                    }
+
+
+                    swal("Good job!", "You Added the sale!", "success")
+                    $(".hideORnot").hide();
+                    console.log(AddSALE);
+                    ajaxCall("POST", "../api/Sales", JSON.stringify(AddSALE), postSaleSeccess, postSaleError);
+                    
+                    location.reload();
+
+                }
+                function checkCode() {
+
+                    return false;
+                }
+                function postSaleSeccess(data) {
+                    console.log(data);
+                }
+                function postSaleError(err) {
+                    console.log(err);
+                }
+               
+                //////////////////Delete row in data///////////////
+
+                $(document).on("click", ".deleteBtn", function () {
+                    var SaleId = this.getAttribute('data-SaleId');
+
+
+                    swal({ // this will open a dialouge
+                        title: "Are you sure ??",
+                        text: "",
+                        icon: "warning",
+                        buttons: true,
+                        dangerMode: true
+                    })
+                    .then(function (willDelete) {
+                        if (willDelete) DeleteSale(SaleId);
+                        else swal("Not Deleted!");
+
+                    });
+
+                });
+                function DeleteSale(SaleId) {
+
+                    ajaxCall("DELETE", "../api/Sales", JSON.stringify(SaleId), deleteSuccess, deleteerror);
+                    location.reload();
+
+                }
+                function deleteSuccess(data) {
+                    console.log(data);
+                }
+                function deleteerror(err) {
+                    console.log(err);
+                }
+    </script>
+</body>
+</html>
